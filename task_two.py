@@ -1,28 +1,41 @@
-import pandas as pd
-import glob
+import csv
+import os
 
-# Step 1: Load all CSV files from the data folder
-file_paths = glob.glob('data/*.csv')  # Adjust path as needed
-df_list = []
+DATA_DIRECTORY = "./data"
+OUTPUT_FILE_PATH = "./formatted_data.csv"
 
-for path in file_paths:
-    df = pd.read_csv(path)
+# open the output file
+with open(OUTPUT_FILE_PATH, "w") as output_file:
+    writer = csv.writer(output_file)
 
-    # Step 2: Filter for only 'Pink Morsels'
-    df = df[df['product'] == 'Pink Morsels']
+    # add a csv header
+    header = ["sales", "date", "region"]
+    writer.writerow(header)
 
-    # Step 3: Calculate 'sales'
-    df['sales'] = df['quantity'] * df['price']
+    # iterate through all files in the data directory
+    for file_name in os.listdir(DATA_DIRECTORY):
+        # open the csv file for reading
+        with open(f"{DATA_DIRECTORY}/{file_name}", "r") as input_file:
+            reader = csv.reader(input_file)
+            # iterate through each row in the csv file
+            row_index = 0
+            for input_row in reader:
+                # if this row is not the csv header, process it
+                if row_index > 0:
+                    # collect data from row
+                    product = input_row[0]
+                    raw_price = input_row[1]
+                    quantity = input_row[2]
+                    transaction_date = input_row[3]
+                    region = input_row[4]
 
-    # Step 4: Keep only required columns
-    df_filtered = df[['sales', 'date', 'region']]
+                    # if this is a pink morsel transaction, process it
+                    if product == "pink morsel":
+                        # finish formatting data
+                        price = float(raw_price[1:])
+                        sale = price * int(quantity)
 
-    df_list.append(df_filtered)
-
-# Step 5: Combine all dataframes
-final_df = pd.concat(df_list, ignore_index=True)
-
-# Step 6: Save to output CSV
-final_df.to_csv('formatted_sales.csv', index=False)
-
-print("✅ Output saved to 'formatted_sales.csv'")
+                        # write the row to output file
+                        output_row = [sale, transaction_date, region]
+                        writer.writerow(output_row)
+                row_index += 1
